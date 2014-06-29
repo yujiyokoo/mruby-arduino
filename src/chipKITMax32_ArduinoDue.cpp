@@ -22,6 +22,8 @@
 #include <Servo/Servo.h>
 #endif
 
+#include <LiquidCrystal.h>
+
 mrb_value mrb_serial_available(mrb_state *mrb, mrb_value self){
   return mrb_fixnum_value(Serial.available());
 }
@@ -82,6 +84,54 @@ mrb_value mrb_servo_detach(mrb_state *mrb, mrb_value self){
   servo->detach();
   return mrb_nil_value();
 }
+
+// LiquidCrystal
+void mrb_lc_free(mrb_state *mrb, void *ptr){
+  delete (LiquidCrystal *)ptr;
+}
+
+struct mrb_data_type mrb_lc_type = {"LiquidCrystal", mrb_lc_free};
+
+mrb_value mrb_lc_initialize(mrb_state *mrb, mrb_value self){
+  mrb_int rs, enable, d4, d5, d6, d7;
+  int n = mrb_get_args(mrb, "iiiiii", &rs, &enable, &d4, &d5, &d6, &d7);
+  LiquidCrystal *newLiquidCrystal = new LiquidCrystal(rs, enable, d4, d5, d6, d7);
+  DATA_PTR(self) = newLiquidCrystal;
+  DATA_TYPE(self) = &mrb_lc_type;
+  return self;
+}
+
+mrb_value mrb_lc_begin(mrb_state *mrb, mrb_value self){
+  LiquidCrystal *lcd = (LiquidCrystal *)mrb_get_datatype(mrb, self, &mrb_lc_type);
+  mrb_int cols, rows;
+  int n = mrb_get_args(mrb, "ii", &cols, &rows);
+  lcd->begin(cols, rows);
+  return mrb_nil_value();
+}
+
+mrb_value mrb_lc_print(mrb_state *mrb, mrb_value self){
+  LiquidCrystal *lcd = (LiquidCrystal *)mrb_get_datatype(mrb, self, &mrb_lc_type);
+  mrb_value s;
+  mrb_get_args(mrb, "S", &s);
+  lcd->print(RSTRING_PTR(s));
+  return mrb_nil_value();
+}
+
+mrb_value mrb_lc_clear(mrb_state *mrb, mrb_value self){
+  LiquidCrystal *lcd = (LiquidCrystal *)mrb_get_datatype(mrb, self, &mrb_lc_type);
+  lcd->clear();
+  return mrb_nil_value();
+}
+
+mrb_value mrb_lc_setCursor(mrb_state *mrb, mrb_value self){
+  LiquidCrystal *lcd = (LiquidCrystal *)mrb_get_datatype(mrb, self, &mrb_lc_type);
+  mrb_int col, row;
+  int n = mrb_get_args(mrb, "ii", &col, &row);
+  lcd->setCursor(col, row);
+  return mrb_nil_value();
+}
+
+// ^^^^^^ LiquidCrystal
 
 
 mrb_value mrb_arduino_pinMode(mrb_state *mrb, mrb_value self){
@@ -258,6 +308,15 @@ mruby_arduino_init_chipKIT_or_Due(mrb_state* mrb) {
   mrb_define_method(mrb, servoClass, "write", mrb_servo_write, ARGS_REQ(1));
   mrb_define_method(mrb, servoClass, "detach", mrb_servo_detach, ARGS_NONE());
   
+  // LiquidCrystal
+  RClass *lcClass = mrb_define_class(mrb, "LiquidCrystal", mrb->object_class);
+  MRB_SET_INSTANCE_TT(lcClass, MRB_TT_DATA);
+  mrb_define_method(mrb, lcClass, "initialize", mrb_lc_initialize, ARGS_NONE());
+  mrb_define_method(mrb, lcClass, "begin", mrb_lc_begin, ARGS_REQ(2));
+  mrb_define_method(mrb, lcClass, "print", mrb_lc_print, ARGS_REQ(1));
+  mrb_define_method(mrb, lcClass, "clear", mrb_lc_clear, ARGS_REQ(1));
+  mrb_define_method(mrb, lcClass, "setCursor", mrb_lc_setCursor, ARGS_REQ(2));
+
   RClass *arduinoModule = mrb_define_module(mrb, "Arduino");
   mrb_define_module_function(mrb, arduinoModule, "pinMode", mrb_arduino_pinMode, ARGS_REQ(2));
   mrb_define_module_function(mrb, arduinoModule, "digitalWrite", mrb_arduino_digitalWrite, ARGS_REQ(2));
