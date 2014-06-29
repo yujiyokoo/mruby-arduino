@@ -224,6 +224,7 @@ MRuby::CrossBuild.new("ArduinoDue") do |conf|
   #Arduino API
   conf.gem :github =>"kyab/mruby-arduino", :branch => "master" do |g|
     g.cxx.include_paths << ["#{ARDUINO_PATH}/libraries/Servo/src", "#{ARDUINO_PATH}/libraries/Servo/arch/sam"]
+    g.cxx.include_paths << ["#{ARDUINO_PATH}/libraries/LiquidCrystal/src"]
   end
 
 ...
