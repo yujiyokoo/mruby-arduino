@@ -1,5 +1,6 @@
 #mruby-arduino
 mruby-arduino is wrapper mrbgem for Arduino API.
+This fork contains LiquidCrystal support for Arduino Due.
 
 This mrbgem is currently intended to use with Arduino compatible board "chipKIT Max32" from Digilent Inc, "Arduino Due", or "Intel Galileo" but should work with any Arduino compatible environment. (Notice: Your board should have enough RAM, say around 90kb at least, to run mruby).
 
